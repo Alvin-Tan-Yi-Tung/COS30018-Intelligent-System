@@ -9,9 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DealerAgent extends Agent {
-	protected String carType;
-    protected int listPrice;
-    private Map<AID, Integer> buyerRounds = new HashMap<>();
+	protected String carType;	// Car model being sold
+    protected int listPrice;	// Initial asking price
+    private Map<AID, Integer> buyerRounds = new HashMap<>();	// Tracks negotiation rounds per buyer
 
     protected void setup() {
         try {
@@ -29,6 +29,11 @@ public class DealerAgent extends Agent {
         }
     }
 
+    /**
+     * Registers car listing with BrokerAgent
+     * - Sends INFORM message with "CarType,Price" format
+     * - Essential for appearing in broker's marketplace
+     */
     protected void registerWithBroker() {
         try {
             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
@@ -42,9 +47,19 @@ public class DealerAgent extends Agent {
         }
     }
 
+    /**
+     * Sets up continuous negotiation handler
+     * - Uses AchieveREResponder for FIPA protocol compliance
+     * - Listens for PROPOSE messages (buyer offers)
+     */
     private void setupNegotiationHandler() {
         MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.PROPOSE);
         addBehaviour(new AchieveREResponder(this, mt) {
+        	/**
+             * Core negotiation logic for handling offers
+             * @param propose Buyer's PROPOSE message with "CarType,Offer"
+             * @return Response message (ACCEPT/COUNTER/FAILURE)
+             */
             protected ACLMessage prepareResponse(ACLMessage propose) {
                 try {
                     String[] parts = propose.getContent().split(",");
@@ -82,6 +97,11 @@ public class DealerAgent extends Agent {
                 }
             }
 
+            /**
+             * Creates acceptance message and notifies broker
+             * - Finalizes deal at agreed price
+             * - Removes dealer from broker listings
+             */
             private ACLMessage createAcceptMessage(ACLMessage original) {
                 ACLMessage accept = original.createReply();
                 accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
@@ -95,10 +115,17 @@ public class DealerAgent extends Agent {
                 return accept;
             }
 
+            /**
+             * Generates counter-offer message
+             * @param price Calculated counter offer amount
+             */
             private ACLMessage createCounterMessage(ACLMessage original, int price) {
                 return createReply(original, ACLMessage.PROPOSE, carType + "," + price);
             }
 
+            /**
+             * Handles negotiation failures/errors
+             */
             private ACLMessage createFailureMessage(ACLMessage original) {
                 return createReply(original, ACLMessage.FAILURE, null);
             }

@@ -8,11 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BrokerAgent extends Agent {
+	// Data storage for dealer car listings (DealerName -> "CarType,Price")
     private Map<String, String> carListings = new HashMap<>();
+    
+    // Commission tracking fields
     private int totalCommission = 0;
-    private int automatedCommission = 0;
-    private int manualCommission = 0;
-
+    private int automatedCommission = 0;	// Automated commission
+    private int manualCommission = 0;		// Manual commission
+    
+    // Agent initialization
     protected void setup() {
         GUI.logMessage(getLocalName(), "🟦 Broker started - Ready for registrations");
         
@@ -57,9 +61,13 @@ public class BrokerAgent extends Agent {
             }
         });
     }
-
-    // Existing methods remain the same until handleDealConfirmation
     
+    /**
+     * Handles dealer registration messages
+     * @param msg INFORM message containing "CarType,Price"
+     * - Stores dealer offering in carListings
+     * - Logs registration in GUI
+     */
     private void handleDealerListing(ACLMessage msg) {
         try {
             String content = msg.getContent();
@@ -81,6 +89,13 @@ public class BrokerAgent extends Agent {
         }
     }
 
+    /**
+     * Processes buyer requests for specific car types
+     * @param msg REQUEST message with desired car type
+     * - Finds lowest price from registered dealers
+     * - Returns best offer (REFUSE if none)
+     * - Logs matching in GUI
+     */
     private void handleBuyerRequest(ACLMessage msg) {
         try {
             GUI.logInteraction(
@@ -127,7 +142,13 @@ public class BrokerAgent extends Agent {
             GUI.logMessage(getLocalName(), "⚠️ Error processing buyer request: " + e.getMessage());
         }
     }
-
+    
+    /**
+     * Handles manual buyer queries with price limits
+     * @param msg QUERY_IF message with "CarType,MaxPrice"
+     * - Returns list of dealers matching criteria
+     * - Used for manual negotiation process
+     */
     private void handleManualQuery(ACLMessage msg) {
         try {
             GUI.logInteraction(
@@ -169,7 +190,13 @@ public class BrokerAgent extends Agent {
         }
     }
 
-    // NEW MANUAL DEAL HANDLING METHODS
+    /**
+     * Finalizes successful deals from manual negotiations
+     * @param msg CONFIRM message with "DEAL_CONFIRMED,..."
+     * - Updates commission totals
+     * - Removes dealer from listings
+     * - Notifies both parties
+     */
     private void handleDealConfirmation(ACLMessage msg) {
         try {
             String[] parts = msg.getContent().split(",");
@@ -227,6 +254,12 @@ public class BrokerAgent extends Agent {
         }
     }
     
+    /**
+     * Processes failed manual negotiations
+     * @param msg CONFIRM message with "DEAL_REJECTED,..."
+     * - Cleans up dealer listings
+     * - Logs rejection in GUI
+     */
     private void handleDealRejection(ACLMessage msg) {
         try {
             String[] parts = msg.getContent().split(",");
@@ -253,6 +286,13 @@ public class BrokerAgent extends Agent {
         }
     }
 
+    /**
+     * Sends completion notifications to both parties
+     * @param buyer Buyer agent name
+     * @param dealer Dealer agent name
+     * @param carType Negotiated car type
+     * @param price Final agreed price
+     */
     private void notifyDealCompletion(String buyer, String dealer, String carType, int price) {
         try {
             // Notify buyer

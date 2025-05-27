@@ -7,31 +7,43 @@ import jade.lang.acl.MessageTemplate;
 import jade.util.leap.Iterator;
 import jade.core.AID;
 
+/**
+ * Monitoring agent that logs all system communications
+ * Provides real-time message tracing for debugging and analysis
+ */
 public class SnifferAgent extends Agent {
 	protected void setup() {
         addBehaviour(new CyclicBehaviour(this) {
             public void action() {
+				// Capture ALL messages in the system
                 ACLMessage msg = receive(MessageTemplate.MatchAll());
                 if (msg != null) {
-                    // Log all messages
+                    // Handle multiple receivers
                     Iterator it = msg.getAllReceiver();
                     while (it.hasNext()) {
                         AID receiver = (AID) it.next();
+						// Log interaction to GUI
                         GUI.logInteraction(
                             msg.getSender().getLocalName(),
                             receiver.getLocalName(),
-                            getPerformative(msg),
+                            getPerformative(msg),	// Get readable performative
                             msg.getContent()
                         );
                     }
                 }
-                block();
+                block();	// Wait for next message
             }
         });
     }
 
-    // Updated method to parse performative from message content
+    /**
+     * Translates ACLMessage performatives to human-readable labels
+     * Handles both standard and custom message formats
+     * @param msg Message to analyze
+     * @return String representation of message type
+     */
 	private String getPerformative(ACLMessage msg) {
+		// Handle special QUERY_IF case first
 		if (msg.getPerformative() == ACLMessage.QUERY_IF) {
 	        return "QUERY_IF"; // Explicitly map QUERY_IF
 	    }
@@ -39,7 +51,7 @@ public class SnifferAgent extends Agent {
 	    int performative = msg.getPerformative();
 	    String content = msg.getContent();
 
-	    // Enhanced manual agent handling
+	    // Detect manual negotiation messages
 	    if (content != null) {
 	        if (content.startsWith("MANUAL_ACCEPT:")) {
 	            return "ACCEPT";
@@ -51,11 +63,11 @@ public class SnifferAgent extends Agent {
 	            return "REJECT";
 	        }
 	        if (content.startsWith("CHAT_START")) {
-	            return "INFORM";
+	            return "INFORM";	// Special chat initialization
 	        }
 	    }
 
-	    // Standard performative mapping
+	    // Map standard FIPA performatives
 	    switch(performative) {
 	        case ACLMessage.REQUEST: return "REQUEST";
 	        case ACLMessage.QUERY_IF: return "QUERY_IF";
@@ -63,7 +75,7 @@ public class SnifferAgent extends Agent {
 	        case ACLMessage.PROPOSE: return "PROPOSE";
 	        case ACLMessage.ACCEPT_PROPOSAL: return "ACCEPT";
 	        case ACLMessage.REJECT_PROPOSAL: return "REJECT";
-	        default: return "UNKNOWN";
+	        default: return "UNKNOWN";	// Fallback for unmapped types
 	    }
 	}
 }
