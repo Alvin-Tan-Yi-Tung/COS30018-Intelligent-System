@@ -53,8 +53,8 @@ A JADE-based multi-agent system for automated and manual car price negotiations 
 ## 💻 Installation
 
 1. **Prerequisites**:
-   - Java JDK 8+
-   - Ecplise JADE platform
+- Java JDK 8+
+- Ecplise JADE platform
 
 2. **Setup**:
 - Create new java project and name it what you want
