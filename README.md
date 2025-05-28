@@ -1,3 +1,5 @@
 # COS30018-Intelligent-System
 
-hallo
+First, open Eclipse JADE platform
+
+
