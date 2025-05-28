@@ -21,7 +21,12 @@ import java.awt.Component;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
+/**
+ * Manual dealer agent with GUI interaction capabilities
+ * Implements negotiation protocols for human-supervised car sales
+ */
 public class ManualDealerAgent extends Agent implements IManualDealerAgent {
+    // Agent state
     private String carType;
     private int listPrice;
     private final Queue<ACLMessage> messageQueue = new LinkedList<>();
@@ -29,12 +34,16 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
     private final Map<String, ACLMessage> pendingMessages = new ConcurrentHashMap<>();
     private Map<String, Boolean> dealerAcceptances = new ConcurrentHashMap<>();
     
-    // Add this method implementation
+    // Interface implementation - Basic message sending
     @Override
     public void sendMessage(ACLMessage msg) {
         super.send(msg);  // Call the Agent's native send() method
     }
     
+    /**
+     * Custom cell editor for dealer response buttons (Accept/Reject)
+     * Handles GUI interaction events for manual negotiations
+     */
     private class DealerButtonEditor extends DefaultCellEditor {
         private final JPanel panel = new JPanel(new FlowLayout());
         private final JButton acceptBtn = new JButton("Accept");
@@ -45,6 +54,7 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         public DealerButtonEditor() {
             super(new JCheckBox());
             
+            // Accept button action
             acceptBtn.addActionListener(e -> {
                 try {
                     dealerAcceptances.put(targetAgent, true);
@@ -89,6 +99,10 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
+    /**
+     * Verifies mutual acceptance between dealer and buyer
+     * @param buyerName The buyer agent name
+     */
     private void checkMutualAcceptance(String buyerName) {
         if (dealerAcceptances.getOrDefault(buyerName, false) &&
             GUI.getBuyerAcceptance(buyerName, getLocalName())) {
@@ -104,6 +118,9 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    /**
+     * Custom renderer for action buttons in request table
+     */
     private class ButtonPanelRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
@@ -113,6 +130,9 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    /**
+     * Agent initialization routine
+     */
     @Override
     public void setup() {
         try {        	
@@ -201,6 +221,9 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    /**
+     * Behavior for handling deal acceptance/rejection
+     */
     private class DealHandler extends CyclicBehaviour {
         public void action() {
             ACLMessage msg = receive(MessageTemplate.or(
@@ -264,16 +287,30 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    // Deal status tracking
     private Map<String, Boolean> dealStatus = new ConcurrentHashMap<>();
 
+    /**
+     * Updates deal acceptance status
+     * @param participant Agent name
+     * @param accepted Acceptance state
+     */
     public void updateDealStatus(String participant, boolean accepted) {
         dealStatus.put(participant, accepted);
     }
 
+    /**
+     * Retrieves deal status
+     * @param participant Agent name
+     * @return Acceptance state
+     */
     public boolean getDealStatus(String participant) {
         return dealStatus.getOrDefault(participant, false);
     }
     
+    /**
+     * Behavior for handling chat messages
+     */
     private class ChatMessageHandler extends CyclicBehaviour {
         public void action() {
             MessageTemplate mt = MessageTemplate.and(
@@ -299,7 +336,9 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
-    // Handle incoming proposals from buyers
+    /**
+     * Behavior for handling purchase proposals
+     */
     private class ProposalHandler extends CyclicBehaviour {
         @Override
         public void action() {
@@ -362,6 +401,9 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    /**
+     * Network connection monitoring behavior
+     */
     private class ConnectionMonitor extends TickerBehaviour {
         public ConnectionMonitor() {
             super(ManualDealerAgent.this, 5000);
@@ -383,7 +425,10 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
-    // Interface implementations
+    /**
+     * Retrieves next incoming message
+     * @return ACLMessage or null if empty
+     */
     @Override
     public ACLMessage getNextMessage() {
         synchronized(messageQueue) {
@@ -391,6 +436,11 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
+    /**
+     * Accepts a buyer's offer
+     * @param buyerName The buyer agent name
+     * @param offer The accepted price
+     */
     @Override
     public void acceptOffer(String buyerName, int offer) {
         try {
@@ -421,6 +471,10 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
+    /**
+     * Rejects a buyer's offer
+     * @param buyerName The buyer agent name
+     */
     @Override
     public void rejectOffer(String buyerName) {
         try {
@@ -437,6 +491,10 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
     
+    /**
+     * Sends acceptance notification
+     * @param counterpart The buyer agent name
+     */
     private void sendAcceptMessage(String counterpart) {
         try {
             ACLMessage accept = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
@@ -451,11 +509,17 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         }
     }
 
+    /**
+     * Provides O2A interface access
+     */
     @Override
     public Object getO2AInterface(Class c) {
         return c.equals(IManualDealerAgent.class) ? this : null;
     }
 
+    /**
+     * Cleanup before agent termination
+     */
     @Override
     protected void takeDown() {
         GUI.logMessage(getLocalName(), "🔴 Agent terminating");
@@ -464,12 +528,18 @@ public class ManualDealerAgent extends Agent implements IManualDealerAgent {
         super.takeDown();
     }
     
+    /**
+     * Pre-move preparation
+     */
     @Override
     protected void beforeMove() {
         GUI.logMessage(getLocalName(), "🔄 Agent moving containers");
         super.beforeMove();
     }
 
+    /**
+     * Post-move initialization
+     */
     @Override
     protected void afterMove() {
         GUI.logMessage(getLocalName(), "🔄 Agent moved successfully");

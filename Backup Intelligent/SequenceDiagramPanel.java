@@ -7,25 +7,38 @@ import java.awt.geom.Path2D;
 import java.util.*;
 import java.util.List;
 
+/**
+ * Interactive sequence diagram visualization component
+ * Displays agent communication flows in real-time
+ */
 public class SequenceDiagramPanel extends JPanel {
-    private List<String> interactions = new ArrayList<>();
-    private String currentAgent;
-    private final Map<String, Color> performativeColors;
+    // Data storage
+    private List<String> interactions = new ArrayList<>();  // Stores interaction strings
+    private String currentAgent;    // Currently selected/ focused agent
+    private final Map<String, Color> performativeColors;    // Color coding for message types 
+
+    // Layout constants
     private static final int LANE_WIDTH = 300;
     private static final int START_X = 50;
     private static final int START_Y = 50;
     private static final int VERTICAL_SPACING = 40;
 
+    /**
+     * Initializes the diagram panel with default settings
+     */
     public SequenceDiagramPanel() {
         setBackground(Color.WHITE);
         performativeColors = new HashMap<>();
         initializePerformativeColors();
         
-        // Add this timer for auto-refresh
+        // Auto-refresh timer (updates every second)
         Timer refreshTimer = new Timer(1000, e -> repaint());
         refreshTimer.start();
     }
 
+    /**
+     * Configures color scheme for different message types
+     */
     private void initializePerformativeColors() {
         performativeColors.put("PROPOSE", new Color(0, 0, 139));    // Dark Blue
         performativeColors.put("ACCEPT", new Color(0, 128, 0));     // Dark Green
@@ -36,12 +49,21 @@ public class SequenceDiagramPanel extends JPanel {
         performativeColors.put("QUERY_IF", new Color(0, 0, 200));
     }
 
+    /**
+     * Updates the diagram with new interaction data
+     * @param interactions List of interaction strings
+     * @param currentAgent Currently selected agent name
+     */
     public void setInteractions(List<String> interactions, String currentAgent) {
         this.interactions = new ArrayList<>(interactions);
         this.currentAgent = currentAgent;
-        repaint();
+        repaint();  // Trigger redraw
     }
 
+    /**
+     * Main rendering method for the diagram
+     * @param g Graphics context
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -114,6 +136,11 @@ public class SequenceDiagramPanel extends JPanel {
         }
     }
 
+    /**
+     * Draws vertical participant lanes
+     * @param g2d Graphics context
+     * @param lanes Map of participant names to x-positions
+     */
     private void drawParticipantLanes(Graphics2D g2d, Map<String, Integer> lanes) {
         g2d.setColor(Color.LIGHT_GRAY);
         for (Map.Entry<String, Integer> entry : lanes.entrySet()) {
@@ -124,6 +151,11 @@ public class SequenceDiagramPanel extends JPanel {
         }
     }
 
+    /**
+     * Determines if an interaction should be displayed
+     * @param interaction The interaction string
+     * @return true if should be displayed
+     */
     private boolean shouldDisplayInteraction(String interaction) {
         return interaction.contains(currentAgent) 
             && !interaction.contains("Sniffer")
@@ -176,6 +208,11 @@ public class SequenceDiagramPanel extends JPanel {
         }
     }
 
+    /**
+     * Categorizes agent names into types (Buyer/Dealer/Broker)
+     * @param agentName The agent's full name
+     * @return Simplified type identifier
+     */
     private String resolveAgentType(String agentName) {
         // Handle manual and automated buyers
         if (agentName.startsWith("M.Buyer") || agentName.startsWith("A.Buyer")) {
@@ -192,6 +229,11 @@ public class SequenceDiagramPanel extends JPanel {
         return agentName;
     }
 
+    /**
+     * Extracts the performative from interaction string
+     * @param interaction The full interaction string
+     * @return The message type (e.g., "PROPOSE")
+     */
     private String extractPerformative(String interaction) {
         int start = interaction.indexOf("[") + 1;
         int end = interaction.indexOf("]");
@@ -200,6 +242,13 @@ public class SequenceDiagramPanel extends JPanel {
             "UNKNOWN";
     }
 
+    /**
+     * Draws an arrowhead at the end of message lines
+     * @param g2d Graphics context
+     * @param senderX Sender's x-position
+     * @param receiverX Receiver's x-position
+     * @param yPos Current y-position
+     */
     private void drawArrowHead(Graphics2D g2d, int senderX, int receiverX, int yPos) {
         Path2D path = new Path2D.Double();
         int arrowSize = 7;
@@ -218,6 +267,9 @@ public class SequenceDiagramPanel extends JPanel {
         g2d.draw(path);
     }
 
+    /**
+     * @return Preferred panel dimensions
+     */
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(1000, 600);

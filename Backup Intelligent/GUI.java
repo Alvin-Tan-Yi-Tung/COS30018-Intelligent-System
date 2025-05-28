@@ -39,7 +39,12 @@ import javax.swing.JButton;
 import java.util.concurrent.ConcurrentHashMap;
 import IntelligentProject.IManualBuyerAgent;
 
+/**
+ * Main GUI class for the Car Negotiation System
+ * Handles all user interface components and agent visualization
+ */
 public class GUI {
+    // UI components and data structures
 	private static Map<String, JTextPane> agentTextPanes = new HashMap<>();
 	private static Map<String, JPanel> negotiationPanels = new HashMap<>();
 	private static Map<String, List<String>> messageFlows = new HashMap<>();
@@ -68,12 +73,17 @@ public class GUI {
     private static Map<String, Map<String, Boolean>> buyerAcceptances = new ConcurrentHashMap<>();
     private static Map<String, Map<String, Boolean>> dealerAcceptances = new ConcurrentHashMap<>();
     
+    /**
+     * Initializes the main GUI components
+     */
     public static void initialize() {
         try {
+            // Main window setup
             frame = new JFrame("Car Negotiation System");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1200, 800);
             
+            // Set consistent font
             Font defaultFont = new Font("Arial", Font.PLAIN, 16);
             UIManager.put("Button.font", defaultFont);
             UIManager.put("Label.font", defaultFont);
@@ -82,7 +92,7 @@ public class GUI {
             UIManager.put("Table.font", defaultFont);
             UIManager.put("TabbedPane.font", defaultFont);
             
-            // Add toolbar with buttons
+            // Create toolbar with agent creation buttons
             JToolBar toolbar = new JToolBar();
             JButton addBuyerBtn = new JButton("+ Add Buyer Agent");
             JButton addDealerBtn = new JButton("+ Add Dealer Agent");
@@ -94,9 +104,11 @@ public class GUI {
             toolbar.add(addDealerBtn);
             frame.add(toolbar, BorderLayout.NORTH);
             
+            // Main content area
             mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             mainSplitPane.setResizeWeight(0.6);
             
+            // Agent tabs
             tabbedPane = new JTabbedPane() {
                 @Override
                 public void setSelectedIndex(int index) {
@@ -112,9 +124,11 @@ public class GUI {
             sequenceDiagramPanel = new SequenceDiagramPanel();
             JScrollPane diagramScrollPane = new JScrollPane(sequenceDiagramPanel);
             
+            // Negotiation tabs
             negotiationTabbedPane = new JTabbedPane();
             negotiationTabbedPane.addTab("Sequence Diagram", diagramScrollPane);
             
+            // Final layout
             mainSplitPane.setTopComponent(tabbedPane);
             mainSplitPane.setBottomComponent(negotiationTabbedPane);
             
@@ -122,7 +136,7 @@ public class GUI {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             frame.setVisible(true);
             
-            // Add commission panel to negotiationTabbedPane
+            // Commission panel
             commissionPanel = new JPanel(new GridLayout(3, 1));
             autoCommissionLabel = new JLabel("Automated Commission: RM 0");
             manualCommissionLabel = new JLabel("Manual Commission: RM 0");
@@ -142,6 +156,11 @@ public class GUI {
         return tabbedPane;  // Ensure 'tabbedPane' is your main tab container
     }
     
+    /* AGENT MANAGEMENT METHODS */
+    
+    /**
+     * Shows buyer creation form dialog
+     */
     private static void showBuyerForm() {
         BuyerFormDialog form = new BuyerFormDialog(frame);
         form.setVisible(true);
@@ -151,6 +170,9 @@ public class GUI {
         }
     }
     
+    /**
+     * Shows dealer creation form dialog
+     */
     private static void showDealerForm() {
         DealerFormDialog form = new DealerFormDialog(frame);
         form.setVisible(true);
@@ -160,6 +182,12 @@ public class GUI {
         }
     }
     
+    /**
+     * Creates a new manual buyer agent
+     * @param carType The desired car type
+     * @param offer Initial offer amount
+     * @param budget Maximum budget
+     */
     private static void createManualBuyer(String carType, String offer, String budget) {
         new SwingWorker<Void, Void>() {
             @Override
@@ -198,6 +226,11 @@ public class GUI {
         }.execute();
     }
     
+    /**
+     * Creates a new manual dealer agent
+     * @param carType Car model being sold
+     * @param price Asking price
+     */
     private static void createManualDealer(String carType, String price) {
         try {
             String name = "M.Dealer" + manualDealerCount++;
@@ -234,7 +267,13 @@ public class GUI {
         }
     }
     
-    // Add this method for chat sessions
+    /* CHAT AND NEGOTIATION METHODS */
+    
+    /**
+     * Creates chat session between two agents
+     * @param participant1 First agent
+     * @param participant2 Second agent
+     */
     public static void createChatSession(String participant1, String participant2) {
     	// Sort names to ensure unique session ID
         String[] sorted = {participant1, participant2};
@@ -358,6 +397,14 @@ public class GUI {
         }
     }
     
+    /**
+     * Creates tab for manual buyer agent
+     * @param name Agent name
+     * @param carType Desired car type
+     * @param offerStr Initial offer
+     * @param budgetStr Maximum budget
+     * @param model Table model for dealer matches
+     */
     public static void createManualBuyerTab(String name, String carType, String offerStr, String budgetStr, DefaultTableModel model) {
         JPanel panel = new JPanel(new BorderLayout());
         buyerCarTypes.put(name, carType);
@@ -464,6 +511,13 @@ public class GUI {
         return buyerCarTypes.get(buyerName);
     }
 
+    /**
+     * Creates tab for manual dealer agent
+     * @param name Agent name
+     * @param carType Car model being sold
+     * @param priceStr Asking price
+     * @param model Table model for buyer requests
+     */
     public static void createManualDealerTab(String name, String carType, String priceStr, DefaultTableModel model) {
     	dealerTableModels.put(name, model);
         JPanel panel = new JPanel(new BorderLayout());
@@ -530,6 +584,11 @@ public class GUI {
         confirmColumn.setMaxWidth(140);
     }
     
+    /**
+     * Creates standalone chat window
+     * @param participant1 First agent
+     * @param participant2 Second agent
+     */
     public static void createChatWindow(String participant1, String participant2) {
     	String[] participants = {participant1, participant2};
         Arrays.sort(participants);
@@ -912,6 +971,13 @@ public class GUI {
         }
     }
 
+    /* LOGGING AND MESSAGE HANDLING */
+    
+    /**
+     * Logs a message to an agent's tab
+     * @param agentName Agent name
+     * @param message Message text
+     */
     public static synchronized void logMessage(String agentName, String message) {
         SwingUtilities.invokeLater(() -> {
             try {
@@ -943,6 +1009,13 @@ public class GUI {
         });
     }
     
+    /**
+     * Logs an interaction between agents
+     * @param sender Sending agent
+     * @param receiver Receiving agent
+     * @param performative Message type
+     * @param content Message content
+     */
     public static synchronized void logInteraction(String sender, String receiver, 
             String performative, String content) {
         String interaction;
@@ -1205,6 +1278,14 @@ public class GUI {
         return panel;
     }
 
+    /* HELPER METHODS */
+    
+    /**
+     * Applies color scheme based on agent type
+     * @param agentName Agent name
+     * @param pane Optional text pane to color
+     * @param tabPanel Optional tab panel to color
+     */
     private static void applyAgentColors(String agentName, JTextPane pane, JPanel tabPanel) {
         Color bgColor = Color.WHITE;
         Color fgColor = Color.BLACK;
@@ -1271,6 +1352,11 @@ public class GUI {
         }
     }
     
+    /* INNER CLASSES */
+
+    /**
+     * Custom panel for visualizing sequence diagrams
+     */
     private static class SequenceDiagramPanel extends JPanel {
         private List<String> interactions = new ArrayList<>();
         private String currentAgent;
@@ -1289,6 +1375,11 @@ public class GUI {
             return new Dimension(width, height);
         }
         
+        /**
+         * Sets interactions to display
+         * @param interactions List of interaction strings
+         * @param agent Current focused agent
+         */
         public void setInteractions(List<String> interactions, String agent) {
             this.interactions = interactions;
             this.currentAgent = agent;
@@ -1439,6 +1530,9 @@ public class GUI {
         }
     }
     
+    /**
+     * Custom button renderer for table cells
+     */
     private static class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer(String text) {
             super(text);
@@ -1481,6 +1575,9 @@ public class GUI {
                          .getOrDefault(buyer, false);
     }
 
+    /**
+     * Custom button editor for table cells
+     */
     private static class ButtonEditor extends AbstractCellEditor implements TableCellEditor {
         private final JButton button;
         private String dealerName;
@@ -1803,7 +1900,12 @@ public class GUI {
         tabbedPane.addTab("Broker Commission", panel);
     }
 
-    // Add new method
+    /**
+     * Updates commission display
+     * @param auto Automated commission amount
+     * @param manual Manual commission amount
+     * @param total Total commission amount
+     */
     public static void updateCommissionDisplay(int auto, int manual, int total) {
         SwingUtilities.invokeLater(() -> {
             autoCommissionLabel.setText("Automated Commission: RM " + auto);

@@ -20,9 +20,16 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Component;
 import java.awt.FlowLayout;
 
+/**
+ * Manual buyer agent with GUI interaction capabilities
+ * Implements human-supervised car purchasing negotiation
+ */
 public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
+    // GUI components
     private DefaultTableModel dealerMatchesModel;
     private JLabel statusLabel;
+
+    // Data structures
     private final Queue<Integer> offerQueue = new LinkedList<>();
     private String carType;
     private int reservePrice;
@@ -32,17 +39,31 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
     private Map<String, Boolean> dealStatus = new ConcurrentHashMap<>();
     private Map<String, Boolean> buyerAcceptances = new ConcurrentHashMap<>();
     
+    /**
+     * Adds offer to processing queue (O2A communication)
+     * @param offer The offer amount to queue
+     */
     public void putO2AObject(int offer) {
         synchronized(offerQueue) {
             offerQueue.add(offer);
         }
     }
     
+    // Interface implementations
+    
+    /**
+     * Sends message using JADE infrastructure
+     * @param msg The ACLMessage to send
+     */
     @Override
     public void sendMessage(ACLMessage msg) {
         super.send(msg);
     }
     
+    /**
+     * Retrieves next incoming message
+     * @return ACLMessage or null if queue empty
+     */
     @Override
     public ACLMessage getNextMessage() {
         synchronized(messageQueue) {
@@ -50,6 +71,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Custom cell editor for action buttons in dealer table
+     */
     private class BuyerButtonEditor extends DefaultCellEditor {
         private final JPanel panel = new JPanel(new FlowLayout());
         private final JButton acceptBtn = new JButton("Accept");
@@ -104,6 +128,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
 
+    /**
+     * Checks for mutual acceptance between buyer and dealer
+     * @param dealerName The dealer agent name
+     */
     private void checkMutualAcceptance(String dealerName) {
         if (buyerAcceptances.getOrDefault(dealerName, false) &&
             GUI.getDealerAcceptance(dealerName, getLocalName())) {
@@ -119,6 +147,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Behavior for handling chat messages
+     */
     private class ChatHandler extends CyclicBehaviour {
         public void action() {
             MessageTemplate mt = MessageTemplate.and(
@@ -146,6 +177,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Behavior for logging manual interactions
+     */
     private class ManualInteractionLogger extends CyclicBehaviour {
         public void action() {
             ACLMessage msg = receive();
@@ -160,8 +194,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
-    
-
+    /**
+     * Agent initialization
+     */
     @Override
     protected void setup() {
         try {
@@ -322,6 +357,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Behavior for handling deal responses
+     */
     private class DealResponseHandler extends CyclicBehaviour {
         public void action() {
             MessageTemplate mt = MessageTemplate.or(
@@ -374,6 +412,11 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
             }
         }
         
+        /**
+         * Updates dealer status in table
+         * @param dealerName The dealer name
+         * @param status New status text
+         */
         private void updateDealerStatus(String dealerName, String status) {
             for(int i=0; i<dealerMatchesModel.getRowCount(); i++) {
                 if(dealerMatchesModel.getValueAt(i, 0).equals(dealerName)) {
@@ -384,15 +427,29 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
 
+    /**
+     * Updates deal status for participant
+     * @param participant Agent name
+     * @param accepted Acceptance state
+     */
     public void updateDealStatus(String participant, boolean accepted) {
         dealStatus.put(participant, accepted);
     }
 
+    /**
+     * Gets deal status for participant
+     * @param participant Agent name
+     * @return Acceptance state
+     */
     public boolean getDealStatus(String participant) {
         return dealStatus.getOrDefault(participant, false);
     }
     
-    // Add O2A interface provider
+    /**
+     * Provides O2A interface
+     * @param c The interface class
+     * @return Interface implementation or null
+     */
     @Override
     public Object getO2AInterface(Class c) {
         if (c.equals(IManualBuyerAgent.class)) {
@@ -401,6 +458,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         return null;
     }
     
+    /**
+     * Sends request to specific dealer
+     * @param dealerName The target dealer
+     */
     public void sendRequestToDealer(String dealerName) {
         try {
             ACLMessage propose = new ACLMessage(ACLMessage.PROPOSE);
@@ -417,6 +478,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Handles dealer response messages
+     * @param msg The response message
+     */
     private void handleDealerResponse(ACLMessage msg) {
         String dealerName = msg.getSender().getLocalName();
         String status;
@@ -431,6 +496,7 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
                 status = "Unknown";
         }
 
+        // Update GUI
         SwingUtilities.invokeLater(() -> {
             for (int i = 0; i < dealerMatchesModel.getRowCount(); i++) {
                 if (dealerMatchesModel.getValueAt(i, 0).equals(dealerName)) {
@@ -444,6 +510,9 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         });
     }
 
+    /**
+     * Queries broker for matching dealers
+     */
     @Override
     public void queryBrokerForDealers() {
         try {
@@ -479,6 +548,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
 
+    /**
+     * Processes dealer matches from broker
+     * @param content The broker response content
+     */
     private void processDealerMatches(String content) {
         SwingUtilities.invokeLater(() -> {
             try {
@@ -522,6 +595,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         });
     }
 
+    /**
+     * Starts negotiation with dealer
+     * @param dealerName The target dealer
+     */
     @Override
     public void startNegotiation(String dealerName) {
         try {
@@ -537,6 +614,10 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
     
+    /**
+     * Sends acceptance message
+     * @param counterpart The dealer name
+     */
     private void sendAcceptMessage(String counterpart) {
         try {
             ACLMessage accept = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
@@ -551,34 +632,55 @@ public class ManualBuyerAgent extends BuyerAgent implements IManualBuyerAgent {
         }
     }
 
+    /**
+     * Gets dealer matches table model
+     * @return The table model
+     */
     @Override
     public DefaultTableModel getDealerMatchesModel() {
         return dealerMatchesModel;
     }
 
+    /**
+     * Sets status label reference
+     * @param label The status label
+     */
     @Override
     public void setStatusLabel(JLabel label) {
         this.statusLabel = label;
     }
 
+    /**
+     * Updates status text
+     * @param message The status message
+     */
     private void updateStatus(String message) {
         if (statusLabel != null) {
             SwingUtilities.invokeLater(() -> statusLabel.setText("Status: " + message));
         }
     }
 
+    /**
+     * Cleanup before termination
+     */
     @Override
     protected void takeDown() {
         GUI.logMessage(getLocalName(), "🔚 Terminating buyer agent");
         super.takeDown();
     }
     
+    /**
+     * Pre-move preparation
+     */
     @Override
     protected void beforeMove() {
         GUI.logMessage(getLocalName(), "🔄 Agent moving containers");
         super.beforeMove();
     }
 
+    /**
+     * Post-move initialization
+     */
     @Override
     protected void afterMove() {
         GUI.logMessage(getLocalName(), "🔄 Agent moved successfully");
