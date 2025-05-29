@@ -250,11 +250,22 @@ public class BuyerAgent extends Agent {
 
         public boolean done() {
             if (negotiationDone) {
-                GUI.logMessage(getLocalName(), 
-                    negotiationComplete ? "🏁 Negotiation successful" : "⚠️ Negotiation failed");
+                if (!negotiationComplete) {
+                    // Notify broker of failure
+                    ACLMessage failure = new ACLMessage(ACLMessage.FAILURE);
+                    failure.addReceiver(new AID("BrokerAgent", AID.ISLOCALNAME));
+                    failure.setContent("NEGOTIATION_FAILED," + 
+                        getLocalName() + "," + 
+                        dealer.getLocalName() + "," + 
+                        carType);
+                    myAgent.send(failure);
+                    
+                    GUI.logMessage(getLocalName(), "⚠️ Negotiation failed");
+                }
                 myAgent.doDelete();
+                return true;
             }
-            return negotiationDone;
+            return false;
         }
     }
 }

@@ -127,6 +127,15 @@ public class DealerAgent extends Agent {
              * Handles negotiation failures/errors
              */
             private ACLMessage createFailureMessage(ACLMessage original) {
+                // Notify broker of failure
+                ACLMessage brokerMsg = new ACLMessage(ACLMessage.FAILURE);
+                brokerMsg.addReceiver(new AID("BrokerAgent", AID.ISLOCALNAME));
+                brokerMsg.setContent("NEGOTIATION_FAILED," + 
+                    original.getSender().getLocalName() + "," + 
+                    getLocalName() + "," + 
+                    carType);
+                send(brokerMsg);
+                
                 return createReply(original, ACLMessage.FAILURE, null);
             }
 

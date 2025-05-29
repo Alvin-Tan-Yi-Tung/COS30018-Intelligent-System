@@ -99,6 +99,9 @@ public class Main {
         createDealer("A.Dealer1", "Toyota", 30000);
         createDealer("A.Dealer2", "Honda", 25000);
         createDealer("A.Dealer3", "Toyota", 28000);
+        createDealer("A.Dealer4", "Bezza", 33000);
+        createDealer("A.Dealer5", "Hilux", 32000);
+        createDealer("A.Dealer6", "Axia", 37000);
     }
 
     /**
@@ -111,6 +114,9 @@ public class Main {
         createBuyer("A.Buyer3", "Honda", 18000, 23000);
         createBuyer("A.Buyer4", "Toyota", 30000, 45000);
         createBuyer("A.Buyer5", "Honda", 16000, 26000);
+        createBuyer("A.Buyer6", "Bezza", 19000, 23000);
+        createBuyer("A.Buyer7", "Hilux", 28000, 33000);
+        createBuyer("A.Buyer8", "Myvi", 21000, 23000);
     }
 
     /**

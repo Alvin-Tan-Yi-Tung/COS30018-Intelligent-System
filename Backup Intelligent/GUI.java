@@ -1398,14 +1398,14 @@ public class GUI {
             int startX = 50;
             int startY = 50;
             
-            // Draw participant lines (Sniffer removed)
+            // Draw participant lines
             String[] participants = {"Buyer", "Broker", "Dealer"};
             Map<String, Integer> xPositions = new HashMap<>();
             for (int i = 0; i < participants.length; i++) {
                 int x = startX + i * laneWidth;
                 xPositions.put(participants[i], x);
                 g2d.drawLine(x, startY, x, getHeight() - 50);
-                g2d.setFont(new Font("Arial", Font.BOLD, 14));  // Added font setting
+                g2d.setFont(new Font("Arial", Font.BOLD, 14));
                 g2d.drawString(participants[i], x - 20, startY - 10);
             }
             
@@ -1429,10 +1429,21 @@ public class GUI {
                             String performative = extractPerformative(interaction);
                             g2d.setColor(getPerformativeColor(performative));
                             
-                            drawInteraction(g2d, xPositions.get(fromType), 
-                                         xPositions.get(toType), 
-                                         y, 
-                                         interaction.substring(interaction.indexOf(":") + 1).trim());
+                            // Set line style (dashed for failure, solid otherwise)
+                            if ("FAILURE".equals(performative)) {
+                                float[] dashPattern = {5, 5}; // Dash pattern
+                                g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, 
+                                    BasicStroke.JOIN_MITER, 10, dashPattern, 0));
+                            } else {
+                                g2d.setStroke(new BasicStroke(1)); // Solid line
+                            }
+                            
+                            int fromX = xPositions.get(fromType);
+                            int toX = xPositions.get(toType);
+                            
+                            // Draw the interaction line
+                            drawInteraction(g2d, fromX, toX, y, 
+                                interaction.substring(interaction.indexOf(":") + 1).trim());
                             y += 40;
                         }
                     }
@@ -1455,33 +1466,11 @@ public class GUI {
         }
         
         private boolean shouldDisplayInteraction(String interaction) {
-            // Show interactions involving manual agents or current agent
-        	return interaction.contains(currentAgent) && 
-        	           !interaction.contains("Sniffer");
+            // Show interactions involving current agent
+            return interaction.contains(currentAgent) && 
+                       !interaction.contains("Sniffer");
         }
         
-        private void drawInteraction(Graphics2D g2d, int fromX, int toX, int y, String message) {
-            // Draw arrow line
-            Path2D path = new Path2D.Double();
-            path.moveTo(fromX, y);
-            path.lineTo(toX, y);
-            
-            // Draw arrowhead
-            if (fromX < toX) {
-                path.lineTo(toX - 10, y - 5);
-                path.moveTo(toX, y);
-                path.lineTo(toX - 10, y + 5);
-            } else {
-                path.lineTo(toX + 10, y - 5);
-                path.moveTo(toX, y);
-                path.lineTo(toX + 10, y + 5);
-            }
-            
-            g2d.draw(path);
-            g2d.drawString(message, (fromX + toX)/2 - 20, y - 10);
-        }
-        
-        // New color handling methods
         private String extractPerformative(String interaction) {
             int start = interaction.indexOf("[") + 1;
             int end = interaction.indexOf("]");
@@ -1493,40 +1482,45 @@ public class GUI {
         private Color getPerformativeColor(String performative) {
             switch (performative.toUpperCase()) {
                 case "INFORM":
-                    return new Color(34, 139, 34);
+                    return new Color(34, 139, 34); // ForestGreen
                 case "REQUEST":
-                    return new Color(0, 0, 205);
+                    return new Color(0, 0, 205); // MediumBlue
                 case "PROPOSE":
-                    return new Color(148, 0, 211);
+                    return new Color(148, 0, 211); // DarkViolet
                 case "ACCEPT":
-                    return new Color(0, 100, 0);
+                    return new Color(0, 100, 0); // DarkGreen
                 case "REJECT":
-                    return new Color(255, 165, 0);
+                    return new Color(255, 165, 0); // Orange
+                case "FAILURE":
+                    return new Color(220, 20, 60); // Crimson
+                case "CONFIRM":
+                    return new Color(0, 139, 139); // DarkCyan
                 default:
                     return Color.DARK_GRAY;
             }
         }
-     
-        private String getAgentType(String agentName) {
-            // Handle manual and automated agents uniformly
-            if (agentName.startsWith("M.Buyer") || agentName.startsWith("A.Buyer")) {
-                return "Buyer";
-            } 
-            if (agentName.startsWith("M.Dealer") || agentName.startsWith("A.Dealer")) {
-                return "Dealer";
-            }
-            if (agentName.equals("BrokerAgent")) {
-                return "Broker";
-            }
-            return agentName;
-        }
         
-        private static void showAgentInteractions(String agentName) {
-            if (sequenceDiagramPanel != null) {
-                List<String> interactions = agentInteractions.getOrDefault(agentName, new ArrayList<>());
-                sequenceDiagramPanel.setInteractions(interactions, agentName);
-                sequenceDiagramPanel.repaint();
+        private void drawInteraction(Graphics2D g2d, int fromX, int toX, int y, String message) {
+            // Draw the line
+            g2d.drawLine(fromX, y, toX, y);
+            
+            // Draw arrowhead at the end (toX)
+            int arrowSize = 5;
+            if (fromX < toX) {
+                // Right arrow
+                g2d.drawLine(toX, y, toX - arrowSize, y - arrowSize);
+                g2d.drawLine(toX, y, toX - arrowSize, y + arrowSize);
+            } else {
+                // Left arrow
+                g2d.drawLine(toX, y, toX + arrowSize, y - arrowSize);
+                g2d.drawLine(toX, y, toX + arrowSize, y + arrowSize);
             }
+            
+            // Draw the message text above the line
+            g2d.setFont(new Font("Arial", Font.PLAIN, 12));
+            int textWidth = g2d.getFontMetrics().stringWidth(message);
+            int textX = (fromX + toX) / 2 - textWidth / 2;
+            g2d.drawString(message, textX, y - 10);
         }
     }
     

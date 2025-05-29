@@ -22,16 +22,19 @@ public class BrokerAgent extends Agent {
         
         addBehaviour(new jade.core.behaviours.CyclicBehaviour(this) {
             public void action() {
-                MessageTemplate mt = MessageTemplate.or(
-                    MessageTemplate.or(
-                        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-                        MessageTemplate.MatchPerformative(ACLMessage.REQUEST)
-                    ),
-                    MessageTemplate.or(
-                        MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF),
-                        MessageTemplate.MatchPerformative(ACLMessage.CONFIRM)
-                    )
-                );
+            	MessageTemplate mt = MessageTemplate.or(
+            		    MessageTemplate.or(
+            		        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            		        MessageTemplate.MatchPerformative(ACLMessage.REQUEST)
+            		    ),
+            		    MessageTemplate.or(
+            		        MessageTemplate.or(
+            		            MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF),
+            		            MessageTemplate.MatchPerformative(ACLMessage.CONFIRM)
+            		        ),
+            		        MessageTemplate.MatchPerformative(ACLMessage.FAILURE)
+            		    )
+            		);
                 
                 ACLMessage msg = receive(mt);
                 if (msg != null) {
@@ -53,6 +56,9 @@ public class BrokerAgent extends Agent {
                             break;
                         case ACLMessage.CONFIRM:
                             // Reserved for future extensions
+                            break;
+                        case ACLMessage.FAILURE: // ADDED INSIDE SWITCH BLOCK
+                            handleNegotiationFailure(msg);
                             break;
                     }
                 } else {
@@ -310,6 +316,31 @@ public class BrokerAgent extends Agent {
         } catch (Exception e) {
             GUI.logMessage(getLocalName(), 
                 "⚠️ Completion notify failed: " + e.getMessage());
+        }
+    }
+    
+    private void handleNegotiationFailure(ACLMessage msg) {
+        try {
+            String content = msg.getContent();
+            if (content.startsWith("NEGOTIATION_FAILED")) {
+                String[] parts = content.split(",");
+                if (parts.length >= 4) {
+                    String buyer = parts[1];
+                    String dealer = parts[2];
+                    String carType = parts[3];
+                    
+                    GUI.logMessage(getLocalName(), 
+                            "❌ Negotiation Failed - " + buyer + " ↔ " + dealer + 
+                            " | " + carType);
+                        
+                        // Log interaction for sequence diagram
+                        GUI.logInteraction(msg.getSender().getLocalName(), getLocalName(), 
+                            "FAILURE", "Negotiation failed: " + buyer + "-" + dealer);
+                }
+            }
+        } catch (Exception e) {
+            GUI.logMessage(getLocalName(), 
+                "⚠️ Failed to process negotiation failure: " + e.getMessage());
         }
     }
 }
