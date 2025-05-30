@@ -374,6 +374,12 @@ public class GUI {
         }
     }
 
+    /**
+     * Updates chat session with new message
+     * @param sender Agent sending the message
+     * @param receiver Agent receiving the message
+     * @param message Message content
+     */
     public static void updateChatSession(String sender, String receiver, String message) {
         String[] participants = {sender, receiver};
         Arrays.sort(participants);
@@ -813,6 +819,7 @@ public class GUI {
         }
     }
 
+
     private static class ButtonPanelEditor extends DefaultCellEditor {
         private final JPanel btnPanel;
         private final JButton startNegotiateBtn;
@@ -910,7 +917,7 @@ public class GUI {
             return super.stopCellEditing();
         }
     }
-
+    
     private static void createManualNegotiationTab(String buyer, String dealer) {
         String tabName = buyer + " ↔ " + dealer;
         if(negotiationPanels.containsKey(tabName)) return;
@@ -1091,7 +1098,7 @@ public class GUI {
             }
         });
     }
-
+    
     private static void updateFlowDisplay() {
         if (flowTextPane != null) {
             int selectedIndex = tabbedPane.getSelectedIndex();
@@ -1588,8 +1595,6 @@ public class GUI {
             
             button.addActionListener(e -> {
             	int row = table.convertRowIndexToModel(table.getEditingRow());
-//                String dealerName = (String) model.getValueAt(row, 0);
-            	// Use stored modelRow instead of getting from table
                 String dealerName = (String) model.getValueAt(row, 0);
                 
                 try {    	                   
@@ -1705,7 +1710,7 @@ public class GUI {
             panel.add(acceptBtn);
             panel.add(rejectBtn);
         }
-
+        
         private void handleAccept() {
             try {
             	// Record acceptance
@@ -1768,6 +1773,10 @@ public class GUI {
             }
         }
 
+        /**
+         * Updates the counterpart's table to reflect the confirmation
+         * - Only applicable if current agent is a buyer
+         */
         private void updateCounterpartTable(String counterpart) {
             if (isBuyer) {
                 DefaultTableModel dealerModel = GUI.dealerTableModels.get(counterpart);
@@ -1782,6 +1791,9 @@ public class GUI {
             }
         }
 
+        /**
+         * Handles rejection of a deal
+         */
         private void handleReject() {
             try {
             	// 1. Send REJECT to counterpart
@@ -1814,6 +1826,10 @@ public class GUI {
             }
         }
 
+        /**
+         * Notifies the BrokerAgent of a confirmed deal
+         * - Sends deal details including car type and price
+         */
         private void notifyBroker() {
             try {
             	ACLMessage brokerMsg = new ACLMessage(ACLMessage.INFORM);
@@ -1879,7 +1895,7 @@ public class GUI {
             return null; // No specific value needed for button editors
         }
     }
-    
+
     public static void createBrokerTab() {
         JPanel panel = new JPanel(new GridLayout(3, 1));
         

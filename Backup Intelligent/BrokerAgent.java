@@ -319,6 +319,8 @@ public class BrokerAgent extends Agent {
         }
     }
     
+    // Processes a negotiation failure message: extracts buyer, dealer, and car type,
+    // logs the failure to the GUI, and updates the sequence diagram.
     private void handleNegotiationFailure(ACLMessage msg) {
         try {
             String content = msg.getContent();
